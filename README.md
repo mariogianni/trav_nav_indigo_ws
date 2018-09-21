@@ -85,3 +85,10 @@ $ roslaunch vrep_ugv_simulation vrep_ugv_simulation.launch
        - Red, the path planner could not find a path
     Once the waypoints get green, you can right click on one of them and select from the menu the action "Stop the controller" in order to stop the trajectory control and the robot.
 
+### Tuning the parameters of Normal Estimation, Clustering and Traversability Analysis
+To tune the parameters of these functionalities open a new terminal, source the workspace and execute
+<pre><code class="c">
+$ rosrun rqt_reconfigure rqt_reconfigure
+</code></pre>
+
+
