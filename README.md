@@ -59,10 +59,10 @@ $ roslaunch vrep_ugv_simulation vrep_ugv_simulation.launch
    Move the marker at your desired position (hold left click on it and move it w.r.t. image plane; if you also hold SHIFT button you will change the depth of the marker)
    Then right-click on it and select from the menu the action "Select Goal". If you want to abort the goal once is selected, select the action "Abort Goal" from the same menu.
    Text messages will appear over the marker explaining you what is happening. The marker color will change accordingly:
-   - Grey, path planner is waiting for a goal selection
-   - Yellow, the path planner is planning
-   - Green, a path has been found
-   - Red, the path planner could not find a path
+     - Grey, path planner is waiting for a goal selection
+     - Yellow, the path planner is planning
+     - Green, a path has been found
+     - Red, the path planner could not find a path
 
    N.B.: a path to the designated goal can be actually computed if the shown traversability map actually "connect" the goal and the robot positions. 
    You may be required to wait few seconds till the traversability node actually complete the traversability map construction from the mapper inputs.
@@ -73,3 +73,15 @@ $ roslaunch vrep_ugv_simulation vrep_ugv_simulation.launch
    <pre><code class="c">
    $ roslaunch path_planner sim_main_queue_path_planner_ugv1.launch
    </code></pre>
+
+   On RVIZ:
+
+     - Press the key 'M' in order to add a new waypoint directly on the traversability cloud. You can move each created waypoint by holding right click on it and moving. The waypoints should automatically stick to the traversability cloud.
+     - Once you have selected your desired number of waypoints you can right click on one of them and select from the menu the action "Append Task". If you want the robot to continuously revisit the waypoints you set (cyclic path), then select the action "Append Cyclic Task".
+    The marker colors will change accordingly:
+       - Orange, the marker has not been added
+       - Yellow, the path planner is planning
+       - Green, a path has been found
+       - Red, the path planner could not find a path
+    Once the waypoints get green, you can right click on one of them and select from the menu the action "Stop the controller" in order to stop the trajectory control and the robot.
+
