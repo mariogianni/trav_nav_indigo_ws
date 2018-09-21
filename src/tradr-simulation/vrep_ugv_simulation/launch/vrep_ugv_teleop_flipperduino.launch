@@ -1,0 +1,5 @@
+<launch>
+  <node name="arduino_flipper_control_device" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM0" />
+  <node name="arduino_flipper_control_translator" pkg="remote_flipper_controller" type="ctrl" />
+  <node name="vrep_ugv_flippers_state_ctrl" pkg="vrep_ugv_simulation" type="vrep_ugv_flippers_state_ctrl" />
+</launch>

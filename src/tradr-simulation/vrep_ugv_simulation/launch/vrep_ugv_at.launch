@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+
+    <arg name="robot" default="ugv1" />
+    <arg name="ns" default="vrep/$(arg robot)" />
+
+    <group ns="$(arg ns)">
+        <node pkg="vrep_ugv_simulation" type="vrep_ugv_teleop_joy" name="joy_teleop" />
+
+        <include file="$(find nifti_teleop)/launch/nifti_ugv_teleop.launch">
+            <arg name="absolutize_cmd_vel" value="true" />
+        </include>
+
+        <include file="$(find adaptive_traversability)/launch/everything_but_mapping.launch">
+            <arg name="velocity_control" value="false" />
+            <arg name="icp_correction" value="false" />
+            <arg name="robot_name" value="$(arg robot)" />
+            <arg name="odom_in" value="odom" />
+        </include>
+
+        <node pkg="nifti_laser_assembler" type="nifti_laser_assembler" name="nifti_laser_assembler">
+            <param name="laser_frame" value="$(arg robot)/laser" />
+            <param name="robot_frame" value="$(arg robot)/base_link" />
+            <remap from="scan_point_cloud" to="scan_point_cloud_color" />
+        </node>
+        
+        <!-- enable AT by default -->
+        <node pkg="adaptive_traversability" type="enable_at" name="enable_at" />
+        
+    </group>
+    
+
+</launch>
