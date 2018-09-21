@@ -11,5 +11,5 @@
 
 2. Set the environment variable VREP_ROOT_DIR: <br />
     add in your .bashrc the following line <br />
-    <pre><code class="c"> export VREP_ROOT_DIR=<here you put the absolute path of your V-REP installation folder (which contains the launcher vrep.sh) </code></pre>
+    <pre><code class="c"> export VREP_ROOT_DIR=<here you put the absolute path of your V-REP installation folder (which contains the launcher vrep.sh)> </code></pre>
 
