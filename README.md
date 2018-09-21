@@ -91,4 +91,5 @@ To tune the parameters of these functionalities open a new terminal, source the 
 $ rosrun rqt_reconfigure rqt_reconfigure
 </code></pre>
 
+A concise description of these parameters can be found in _~/trav_nav_indigo_ws/src/tradr-loc-map-nav/path_planner/README.md_ file
 
