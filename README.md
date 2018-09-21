@@ -53,6 +53,22 @@ $ roslaunch vrep_ugv_simulation vrep_ugv_simulation.launch
    <pre><code class="c">
    $ roslaunch path_planner sim_main_path_planner_ugv1.launch
    </code></pre>
+
+   On RVIZ, you can set a goal for the planner by using the dedicated interactive marker. The interactive marker (a sphere) will appear over the robot when you launch the path_planner node.
+
+   Move the marker at your desired position (hold left click on it and move it w.r.t. image plane; if you also hold SHIFT button you will change the depth of the marker)
+   Then right-click on it and select from the menu the action "Select Goal". If you want to abort the goal once is selected, select the action "Abort Goal" from the same menu.
+   Text messages will appear over the marker explaining you what is happening. The marker color will change accordingly:
+   - Grey, path planner is waiting for a goal selection
+   - Yellow, the path planner is planning
+   - Green, a path has been found
+   - Red, the path planner could not find a path
+
+   N.B.: a path to the designated goal can be actually computed if the shown traversability map actually "connect" the goal and the robot positions. 
+   You may be required to wait few seconds till the traversability node actually complete the traversability map construction from the mapper inputs.
+
+   Once a path has been found, the path planner will publish it towards the trajectory controller which will make the robot automatically follow the path.
+
    - otherwise, if you want to run the multi-waypoint path planner, open a new terminal and run 
    <pre><code class="c">
    $ roslaunch path_planner sim_main_queue_path_planner_ugv1.launch
