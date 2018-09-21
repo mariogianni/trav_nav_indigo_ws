@@ -49,11 +49,11 @@ $ roslaunch vrep_ugv_simulation vrep_ugv_simulation.launch
 2. Press the play button on V-REP
 
 3. Run the path planner with its RVIZ interface
- - If you want to run the single-waypoint path planner, open a new terminal and run 
+   - If you want to run the single-waypoint path planner, open a new terminal and run 
 <pre><code class="c">
 $ roslaunch path_planner sim_main_path_planner_ugv1.launch
 </code></pre>
- - otherwise, if you want to run the multi-waypoint path planner, open a new terminal and run 
+   - otherwise, if you want to run the multi-waypoint path planner, open a new terminal and run 
 <pre><code class="c">
 $ roslaunch path_planner sim_main_queue_path_planner_ugv1.launch
 </code></pre>
