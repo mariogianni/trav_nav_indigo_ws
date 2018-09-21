@@ -22,3 +22,7 @@ Once you have compiled the tradr-simulation stack, you have to copy the lib _tra
 <pre><code class="c">
 $ roslaunch vrep_ugv_simulation vrep_ugv_simulation.launch
 </code></pre>
+
+* Press the play button on V-REP
+
+Once you completed one of the above procedures, you should have your simulator running and a small window with title "UGV TeleOp" should appear. Keep the focus on that window (click on it) and you will be able to move the UGV with the arrow keys. By using the keys 'A','S','D','W' you are also able to change the configuration of its flippers in order to climb stairs.
