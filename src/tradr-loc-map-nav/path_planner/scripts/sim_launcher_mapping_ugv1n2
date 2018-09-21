@@ -1,0 +1,155 @@
+#!/bin/bash
+
+# N.B.: 
+# 1) this script is designed just for testing the mapping and path planning nodes; it is assumed the use of proper V-REP environment (the one endings with "mapping" prefixes)
+# 2) you can kill all the spawned terminal together by right clicking on the X icon on the left bar and selecting "Quit"
+
+
+ENABLE_UGV2=1 # 1 ugv2 enabled, 0 ugv2 disabled 
+
+ENABLE_PATH_PLANNING=1 # 1 path planning enabled, 0 path planning disabled 
+
+QUEUE_PATH_PLANNER=1 # 1 queue path planner, 0 path planner
+
+ENABLE_MULTI_ROBOT_COORDINATION="true" # true or false
+
+########################################################################################################
+
+if [ $ENABLE_UGV2 -eq 1 ] 
+then
+    echo "ugv2 enabled"
+fi
+
+if [ $ENABLE_PATH_PLANNING -eq 1 ] 
+then
+    echo "path planning enabled"
+fi
+
+if [ $QUEUE_PATH_PLANNER -eq 1 ] 
+then
+    echo "using queue path planner"
+fi
+
+########################################################################################################
+
+echo "using laser assemblers and laser mappers"
+
+#- Mapping UGV1 (laser assembler + mapper) 
+xterm -e "echo ugv1 laser assembler; roslaunch path_planner sim_nifti_laser_assembler_ugv1.launch; bash" &
+xterm -e "echo ugv1 laser mapper; roslaunch path_planner sim_laser_mapper_and_params_ugv1.launch; bash" &
+sleep 1
+
+if [ $ENABLE_UGV2 -eq 1 ] 
+then
+    #- Mapping UGV2  (laser assembler + mapper) 
+    xterm -e "echo ugv2 laser assembler; roslaunch path_planner sim_nifti_laser_assembler_ugv2.launch; bash" &
+    xterm -e "echo ugv2 laser mapper; roslaunch path_planner sim_laser_mapper_and_params_ugv2.launch; bash" &
+    sleep 1
+fi
+
+########################################################################################################
+
+#- Point Cloud Mux and Volumetric
+xterm -e "echo pointcloud mux; roslaunch path_planner sim_mux_and_volumetric_mapping.launch; bash" &
+#N.B. here, for having a lighter framework, we use just one volumetric mapper by muxing together the two clouds coming from the two laser mappers
+
+########################################################################################################
+
+#- Octomap demux  
+#xterm -e "echo octomap demux; roslaunch octomap_demux octomap_demux.launch; bash" &
+#N.B. this has been replaced by a remapping in the dedicated rviz launcher
+
+########################################################################################################
+
+#- Compute normals UGV1 
+xterm -e "echo ugv1 normals; roslaunch path_planner sim_compute_normals_volumetric_ugv1.launch; bash" &
+
+
+if [ $ENABLE_UGV2 -eq 1 ] 
+then
+    #- Compute normals UGV2 
+    xterm -e "echo ugv2 normals; roslaunch path_planner sim_compute_normals_volumetric_ugv2.launch; bash" &
+fi 
+
+sleep 3
+########################################################################################################
+
+#- Traversability UGV1 
+xterm -e "echo ugv1 traversability; roslaunch path_planner sim_traversability_ugv1.launch enable_other_robot_avoidance:=$ENABLE_MULTI_ROBOT_COORDINATION; bash" &
+
+if [ $ENABLE_UGV2 -eq 1 ] 
+then
+    #- Traversability UGV2 
+    xterm -e "echo ugv2 traversability; roslaunch path_planner sim_traversability_ugv2.launch enable_other_robot_avoidance:=$ENABLE_MULTI_ROBOT_COORDINATION; bash" &
+fi 
+
+sleep 3
+
+########################################################################################################
+
+if [ $ENABLE_PATH_PLANNING -eq 1 ]  
+then
+
+########################################################################################################
+
+#- Path Planner UGV1 
+
+    if [ $QUEUE_PATH_PLANNER -eq 1 ] 
+    then
+        # global path planner (queue path planner) + local path planner (path planner manager)
+        xterm -e "echo ugv1 queue path planner; roslaunch path_planner sim_queue_path_planner_ugv1.launch; bash" &
+        #sleep 2 
+        xterm -e "echo ugv1 path planner manager; roslaunch path_planner sim_path_planner_manager_ugv1.launch use_marker_controller:=false; bash" &
+    else
+        #xterm -e "echo ugv1 path planner; roslaunch path_planner sim_path_planner_ugv1.launch; bash" &
+        xterm -e "echo ugv1 path planner manager; roslaunch path_planner sim_path_planner_manager_ugv1.launch; bash" &
+    fi 
+
+    #- Path Planner UGV2 
+
+    if [ $ENABLE_UGV2 -eq 1 ] 
+    then
+
+        if [ $QUEUE_PATH_PLANNER -eq 1 ] 
+        then
+            # global path planner (queue path planner) + local path planner (path planner manager)
+            xterm -e "echo ugv2 queue path planner; roslaunch path_planner sim_queue_path_planner_ugv2.launch; bash" &
+            #sleep 2 
+            xterm -e "echo ugv2 path planner manager; roslaunch path_planner sim_path_planner_manager_ugv2.launch use_marker_controller:=false; bash" &
+        else
+            #xterm -e "echo ugv1 path planner; roslaunch path_planner sim_path_planner_ugv1.launch; bash" &
+            xterm -e "echo ugv2 path planner manager; roslaunch path_planner sim_path_planner_manager_ugv2.launch; bash" &
+        fi 
+    fi
+
+    sleep 3
+########################################################################################################
+
+    #- Trajectory Control UGV1 
+    xterm -e "echo ugv1 trajectory control; roslaunch trajectory_control sim_trajectory_control_ugv1.launch use_mapper:=true; bash" &
+
+
+    if [ $ENABLE_UGV2 -eq 1 ] 
+    then
+        #- Trajectory Control UGV2 
+        xterm -e "echo ugv2 trajectory control; roslaunch trajectory_control sim_trajectory_control_ugv2.launch use_mapper:=true; bash" &
+    fi
+
+    sleep 3
+########################################################################################################
+
+fi  # end  if [ $ENABLE_PATH_PLANNING -eq 1 ] 
+
+########################################################################################################
+
+#- RVIZ
+xterm -e "echo rviz; roslaunch path_planner rviz_sim_mapping_and_path_planning.launch; bash" &
+echo DONE
+
+# NOTE: you can use the following command to get the xterm window live if the app terminates or crashes
+# xterm -e "<you_command>; bash" &
+
+                                                   
+
+
+

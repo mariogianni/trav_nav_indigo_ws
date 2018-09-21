@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>	
+
+<launch>
+    <arg name="respawn_value" default="false" /> <!-- boolean: true, false -->
+  
+    <arg name="robot_name"       default="ugv1" />	
+    <arg name="enable_multi_robot_avoidance" default="false" />    <!-- multi -->
+    <arg name="number_of_robots" default="2"/>                     <!-- multi -->
+    
+	<node name="traversability" pkg="path_planner" type="traversability" respawn="$(arg respawn_value)" output="screen">
+        <rosparam file="$(find path_planner)/launch/path_planner_octomap.yaml" /> 
+        
+        <param name="robot_name" value="$(arg robot_name)" /> 
+        
+        <param name="number_of_robots" value="$(arg number_of_robots)" /> 
+                
+        <param name = "enable_multi_robot_avoidance" value = "$(arg enable_multi_robot_avoidance)"/>   <!-- multi -->
+        
+        <!-- Input -->
+        <!--remap from = "/traj_global_path_other" to = "/$(arg other_robot_name)/traj_global_path"/-->      <!-- multi -->
+        <!--remap from = "/other_robot_transform_sub" to = "/$(arg other_robot_name)/stamped_transform"/-->  <!-- multi -->
+        
+        
+        <!-- Output -->
+        <!--remap from = "/path_to_avoid" to = "/$(arg other_robot_name)/path_to_avoid"/-->                   <!-- multi -->
+        
+	</node> 
+</launch>

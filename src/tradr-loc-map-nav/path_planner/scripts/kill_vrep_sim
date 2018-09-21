@@ -1,0 +1,5 @@
+#!/bin/bash
+
+killall -9 xterm
+killall -9 vrep
+killall -9 python

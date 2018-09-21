@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# this scripts assumes that a source to all tradr ws has already been done
+
+export FILE_LOG_LASER_FILTERING=log_laser_filtering.txt
+export FILE_LOG_MAP_AND_NAV=log_map_and_nav.txt
+export FILE_LOG_SCAN_TO_PC_A=log_scan_to_point_cloud.txt
+export FILE_LOG_SCAN_TO_PC_B=log_scan_to_point_cloud2.txt
+
+#start a named screen session (-S) with a named window (-t) adapting to the terminal size (-A) in detached mode (-d -m):
+screen -S mapping -t laser_filtering -A -d -m
+
+#create new window
+screen -S mapping -X screen -t mapping
+
+#create new window
+screen -S mapping -X screen -t scan_to_point_cloudA
+
+#create new window 
+screen -S mapping -X screen -t scan_to_point_cloudB
+
+#send command to window 1
+screen -S mapping -p laser_filtering -X stuff $'roslaunch nifti_laser_filtering nifti_laser_filtering.launch 2>&1 | tee $FILE_LOG_LASER_FILTERING \n'  # note the final \n is actually necessary for the execution!
+sleep 2
+
+#send command to window 3
+screen -S mapping -p mapping -X stuff $'roslaunch nifti_mapping_launchers mapAndNav.launch 2>&1 | tee $FILE_LOG_MAP_AND_NAV \n'
+sleep 2
+
+#send command to window 2
+screen -S mapping -p scan_to_point_cloudA -X stuff $'roslaunch point_cloud_color nifti_scan_to_point_cloud.launch 2>&1 | tee $FILE_LOG_SCAN_TO_PC_A \n'
+sleep 2
+
+#send command to window 2
+screen -S mapping -p scan_to_point_cloudB -X stuff $'roslaunch point_cloud_color nifti_scan_to_point_cloud.launch 2>&1 | tee $FILE_LOG_SCAN_TO_PC_B \n'
+sleep 2
+
+#now check if the command has been runned on the first window
+#screen -R session -p laser_filtering
+
+#now check if the command has been runned on the second window
+#screen -R session -p scan_to_point_cloud
+
+#now check if the command has been runned on the second window
+#screen -R session -p mapping
+
+#NOTE: to see the output of the nodes you can use
+# $ tail -f <log name>
+
+echo DONE

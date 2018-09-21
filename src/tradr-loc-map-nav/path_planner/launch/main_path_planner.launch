@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>	
+
+<launch>
+
+	<arg name="respawn_value" default="false" /> <!-- boolean: true, false -->
+	
+	<arg name="use_queue_path_planner" default="false" /> <!-- select which planner do you want; 
+														     the domain is boolean: true  -> queue_path_planner
+																					false -> path_planner
+														      
+														     -->									     
+    
+    <arg name="use_rss" default="false" />
+    
+    <arg name="use_trajectory_control" default="true" />
+    <arg name="enable_laser_proximity_callback" default="false"/>  <!-- enable a more conservative use of laser proximity info -->
+    
+    <arg name="pcl_in" default="/volumetric_mapping/octomap_pcl" />	 <!-- coming from volumetric mapping -->												     
+	  
+    <arg name="robot_name"       default="ugv1" />														     
+    <arg name="enable_multi"     default="false"/>  <!-- enable/disable multi-robot coordination -->	
+    <arg name="number_of_robots" default="2"/> 
+    
+    
+    
+    <!-- NORMALS COMPUTATION  (input pcl coming from volumetric mapping) -->
+    <include file="$(find path_planner)/launch/compute_normals.launch">
+		<arg name="respawn_value" value="$(arg respawn_value)" />
+        <arg name="pcl_in" value="$(arg pcl_in)" />
+	</include>	
+	
+    <!-- LAUNCH TRAVERSABILITY ANALYSIS  -->
+    <include file="$(find path_planner)/launch/traversability_analysis.launch">
+		<arg name="respawn_value" value="$(arg respawn_value)" />
+        <arg name="robot_name" value="$(arg robot_name)" />
+        <arg name="enable_multi_robot_avoidance"  value="$(arg enable_multi)" />
+        <arg name="number_of_robots" value="$(arg number_of_robots)" /> 
+	</include>	
+
+    <!-- BLOCK FOR SELECTING THE PATH PLANNER TYPE -->
+	<group unless="$(arg use_queue_path_planner)"> <!-- USE PATH PLANNER MANAGER -->
+		<include file="$(find path_planner)/launch/path_planner_manager.launch">
+			<arg name="respawn_value" value="$(arg respawn_value)" />
+            <arg name="enable_laser_proximity_callback" value="$(arg enable_laser_proximity_callback)"/> 
+            <arg name="use_rss" value="$(arg use_rss)"/>
+		</include>	
+	</group>
+    <group if="$(arg use_queue_path_planner)"> <!-- USE QUEUE(MULTI-WP) PATH PLANNER -->
+		<include file="$(find path_planner)/launch/queue_path_planner.launch">
+			<arg name="respawn_value" value="$(arg respawn_value)" />
+		</include>	
+		<include file="$(find path_planner)/launch/path_planner_manager.launch">
+			<arg name="respawn_value" value="$(arg respawn_value)" />
+			<arg name="use_marker_controller" value="false" /> <!-- do not use single-wp marker along with queue path planner -->
+            <arg name="enable_laser_proximity_callback" value="$(arg enable_laser_proximity_callback)"/> 
+            <arg name="use_rss" value="$(arg use_rss)"/>            
+		</include>	
+	</group>
+
+    <!-- LAUNCH TRAJECTORY CONTROL  -->
+    <group if="$(arg use_trajectory_control)"> <!-- USE TRAJECTORY CONTROL-->
+	<include file="$(find trajectory_control)/launch/trajectory_control.launch">
+		<arg name="respawn_value" value="$(arg respawn_value)" />
+        <arg name="robot_name" value="$(arg robot_name)" />
+	</include>	
+    </group>
+    
+    <!-- LAUNCH LASER PROXIMITY CHECKER -->
+	<include file="$(find laser_proximity_checker)/launch/laser_proximity_checker.launch">
+		<arg name="respawn_value" value="$(arg respawn_value)" />
+	</include>	
+
+</launch>

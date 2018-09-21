@@ -1,0 +1,51 @@
+#!/bin/bash
+
+LOG=1 # 1 do log stuff, 0 otherwise
+
+export FILE_LOG_LASER_FILTERING=log_laser_filtering.txt
+export FILE_LOG_MAP_AND_NAV=log_map_and_nav.txt
+export FILE_LOG_SCAN_TO_PC_A=log_scan_to_point_cloud.txt
+export FILE_LOG_SCAN_TO_PC_B=log_scan_to_point_cloud2.txt
+
+
+if [ $LOG -eq 1 ] 
+then
+    echo "Gonna log outputs..."
+fi
+
+
+# convert /scan to /scan_filtered
+if [ $LOG -eq 1 ] 
+then
+    xterm -e "echo nifti_laser_filtering; roslaunch nifti_laser_filtering nifti_laser_filtering.launch 2>&1 | tee $FILE_LOG_LASER_FILTERING; bash" & 
+else
+    xterm -e "echo nifti_laser_filtering; roslaunch nifti_laser_filtering nifti_laser_filtering.launch; bash" & 
+fi 
+sleep 2
+
+# launch the mapper 
+if [ $LOG -eq 1 ] 
+then
+    xterm -e "echo mapAndNav; roslaunch nifti_mapping_launchers mapAndNav.launch 2>&1 | tee $FILE_LOG_MAP_AND_NAV; bash" &
+else
+    xterm -e "echo mapAndNav; roslaunch nifti_mapping_launchers mapAndNav.launch; bash" &
+fi 
+sleep 2
+
+# convert /scan_filtered to /scan_point_cloud_color
+if [ $LOG -eq 1 ] 
+then
+    xterm -e "echo nifti_scan_to_point_cloud; roslaunch point_cloud_color nifti_scan_to_point_cloud.launch 2>&1 | tee $FILE_LOG_SCAN_TO_PC_A; bash" &
+else
+    xterm -e "echo nifti_scan_to_point_cloud; roslaunch point_cloud_color nifti_scan_to_point_cloud.launch; bash" &
+fi
+sleep 2
+
+# convert /scan_filtered to /scan_point_cloud_color
+#xterm -e "echo nifti_scan_to_point_cloud; roslaunch point_cloud_color nifti_scan_to_point_cloud.launch 2>&1 | tee $FILE_LOG_SCAN_TO_PC_B; bash" &
+#sleep 2
+
+
+echo DONE
+
+

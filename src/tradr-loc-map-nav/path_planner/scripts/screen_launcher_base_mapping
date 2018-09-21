@@ -1,0 +1,26 @@
+#!/bin/bash
+
+
+# this scripts assumes that a source to all tradr ws has already been done
+
+#start a named screen session (-S) with a named window (-t) adapting to the terminal size (-A) in detached mode (-d -m):
+screen -S mapping -t ugv_base -A -d -m
+
+#create new window
+screen -S mapping -X screen -t mapping
+
+#send command to window 1
+screen -S mapping -p ugv_base -X stuff $'roslaunch roslaunch nifti_drivers_launchers ugv.launch \n'  # note the final \n is actually necessary for the execution!
+sleep 2
+
+#send command to window 3
+screen -S mapping -p mapping -X stuff $'roslaunch nifti_mapping_launchers mapAndNav.launch \n'
+sleep 2
+
+#now check if the command has been runned on the first window
+#screen -R session_name -p ugv_base
+
+#now check if the command has been runned on the second window
+#screen -R session_name -p mapping
+
+echo DONE

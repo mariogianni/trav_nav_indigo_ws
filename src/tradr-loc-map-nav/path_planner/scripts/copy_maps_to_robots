@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+source /opt/ros/$ROS_DISTRO/setup.bash         # source ROS 
+source ../../../../devel/setup.bash --extend   # source tradr workspace
+
+echo copying maps to robots 
+
+STARTING_DIR=`pwd` 
+
+#MAP_SOURCE_FOLDER=~/Work/tradr_datasets/maps/DIAG-corridor
+#MAP_SOURCE_FOLDER=~/Work/tradr_datasets/maps/DIAG-court
+#MAP_SOURCE_FOLDER=~/Work/tradr_datasets/maps/TUD
+MAP_SOURCE_FOLDER=~/Work/tradr_datasets/maps/GB_ex
+
+
+MAP_FILES='map.bt map.ply map.vtk trajectory.csv'
+
+GRAPH_SOURCE_FOLDER=mission  # relative to rospackage patrolling_sim/maps
+GRAPH_FILES='mission.graph'
+
+
+echo "================================"
+cd $MAP_SOURCE_FOLDER
+if [ ! -f map.vtk ]; then
+    echo "generating map.vtk "
+    rosrun laser_mapper_tools octomap_to_point_cloud map.bt map.vtk
+fi
+cd $STARTING_DIR
+
+# ======================================================================
+
+declare -A machines
+machines=( ["ctu-robot"]="robot" ["dfki-robot"]="robot" ["eth-robot"]="robot" ["roma-talos"]="robot" ["tno-robot"]="tradr" ["tradr-db"]="tradr" )
+#machines=( ["roma-talos"]="robot" ["tno-robot"]="tradr" ["tradr-db"]="tradr" )
+
+
+# copying map files ====================================================
+
+cd $MAP_SOURCE_FOLDER
+echo "copying maps from $MAP_SOURCE_FOLDER"
+echo "================================"
+echo "copying locally"
+cp $MAP_FILES ~/.ros
+echo "================================"
+
+for hostname in "${!machines[@]}"; do
+    echo "================================"
+    user=${machines[$hostname]}
+    echo "copying map on ${user}@${hostname}"
+    scp $MAP_FILES ${user}@${hostname}:~/.ros
+done
+
+# copying graph files ==================================================
+
+echo "================================"
+echo "================================"
+
+roscd patrolling_sim/maps/$GRAPH_SOURCE_FOLDER 
+echo "copying graph from `pwd`"
+
+for hostname in "${!machines[@]}"; do
+    echo "================================"
+    user=${machines[$hostname]}
+    DEST_FOLDER=$(ssh ${user}@${hostname} "source ~/.tradr_init/${hostname}.profile; rospack find patrolling_sim" | tail -n1)
+    echo "copying graph on ${user}@${hostname}"
+    scp $GRAPH_FILES ${user}@${hostname}:$DEST_FOLDER/maps/$GRAPH_SOURCE_FOLDER
+done
+
+# ======================================================================
+
+cd $STARTING_DIR
+
+echo DONE
+
+

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# N.B.: 
+# 1) this script is designed just for testing the path planning nodes; no SLAM nodes are called; SLAM is assumed to be faked by a proper V-REP environment
+# 2) you can kill all the spawned terminals together by right clicking on the X icon on the left bar and selecting "Quit"
+
+./sim_launcher_ugv 1
+#./sim_launcher_ugv 2
+#./sim_launcher_ugv 3 
+
+
+
+#- RVIZ
+xterm -e "echo rviz; roslaunch path_planner rviz_sim_path_planning.launch; bash" &
+
+
+echo DONE 
+
+# NOTE: you can use the following command to get the xterm window live if the app terminates or crashes
+# xterm -e "<you_command>; bash" &
+
+                                                   
+
+
+

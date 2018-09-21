@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#from http://superuser.com/questions/279573/how-to-run-a-second-command-in-same-screen-session
+
+export LOGFILE1=log.txt
+
+#start a named screen session (-S) with a named window (-t) adapting to the terminal size (-A) in detached mode (-d -m):
+screen -S session -t win0 -A -d -m
+
+#create second window
+screen -S session -X screen -t win1
+
+#send command to first window
+screen -S session -p win0 -X stuff $'echo cmdb1\n echo cmdb2\n echo cmb3\n'  # note the final \n is actually necessary for the execution!
+
+#send command to second window
+screen -S session -p win1 -X stuff $'echo "cmda3" 2>&1 | tee $LOGFILE1\n'
+
+#now check if the command has been runned on the first window
+#screen -R session -p win0
+
+#now check if the command has been runned on the second window
+#screen -R session -p win1
+
+echo DONE
+
+
+                                                   
+
+
+

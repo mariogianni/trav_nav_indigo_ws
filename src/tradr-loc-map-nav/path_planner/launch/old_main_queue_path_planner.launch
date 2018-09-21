@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>	
+
+<launch>
+
+	<arg name="respawn_value" default="false" /> <!-- boolean: true, false -->
+	
+	<arg name="use_queue_path_planner" default="true" /> <!-- select which planner do you want; 
+														     the domain is boolean: true  -> queue_path_planner
+																					false -> path_planner
+														      
+														     -->
+	  
+	 <include file="$(find path_planner)/launch/old_main_path_planner.launch">
+		  <arg name="respawn_value" value="$(arg respawn_value)" />
+		  <arg name="use_queue_path_planner" value="$(arg use_queue_path_planner)" />
+	 </include>
+
+</launch>

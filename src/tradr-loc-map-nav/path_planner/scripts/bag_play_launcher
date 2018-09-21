@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# default values 
+export BAG_DIR="~luigi/Work/tradr_datasets"
+export BAG_FILE="mapping_rss_data_2017-12-21-18-46-01.bag"
+export BAG_FILE="/review_y4/mapping_r200_data_2018-03-16-17-51-15.bag"
+#export BAG_FILE="/review_y4/signal_strength_in_hotel_room.bag"
+
+export BAG_NAME=$BAG_DIR/$BAG_FILE
+
+# if there is an input argument, override the file name 
+if [ $# -eq 1 ]; then
+    BAG_NAME=$1
+fi
+
+
+#ROS_BAG_PLAY_OPTIONS="--rate 0.5"  # comment this to remove rate adjustment
+#ROS_BAG_PLAY_OPTIONS="-l" # for loop 
+
+xterm -e "echo roscore; roscore; bash" &
+sleep 2
+
+rosparam set use_sim_time true # necessary when using a bag file 
+
+# play the bag 
+xterm -e "echo rosbag playing; rosbag play --clock  $ROS_BAG_PLAY_OPTIONS $BAG_NAME; bash" &
+sleep 2
+
+# rviz 
+xterm -e "echo rviz; roslaunch path_planner rviz_path_planning.launch ; bash" &
+#sleep 2
+
+echo DONE
+
+

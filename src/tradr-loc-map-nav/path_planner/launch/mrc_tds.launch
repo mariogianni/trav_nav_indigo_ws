@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>	
+
+<launch>
+        <include file="$(find path_planner)/launch/rviz_multi_robots.launch">
+                <arg name="robot1" value="ugv1" />
+                <arg name="robot2" value="ugv2" />
+                <arg name="robot3" value="ugv3" />
+        </include>
+</launch>

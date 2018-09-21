@@ -1,0 +1,24 @@
+#!/bin/bash
+
+
+ROBOT_PREFIX1='ugv1'
+ROBOT_PREFIX2='ugv2'
+
+SAVED_MAP_FILE='map.ply'
+
+echo "ROBOT_PREFIX1: $ROBOT_PREFIX1"
+echo "ROBOT_PREFIX2: $ROBOT_PREFIX2"
+echo "SAVED_MAP_FILE: $SAVED_MAP_FILE"
+
+xterm -e "echo interactive_cloud_publisher ugv1; roslaunch laser_mapper_tools interactive_cloud_publisher.launch prefix:=$ROBOT_PREFIX1 saved_map_file:=$SAVED_MAP_FILE; bash" &
+
+xterm -e "echo interactive_cloud_publisher ugv2; roslaunch laser_mapper_tools interactive_cloud_publisher.launch prefix:=$ROBOT_PREFIX2 saved_map_file:=$SAVED_MAP_FILE; bash" &
+
+########################################################################################################
+
+echo DONE
+
+                                                   
+
+
+

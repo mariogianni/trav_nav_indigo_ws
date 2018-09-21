@@ -1,0 +1,123 @@
+#!/bin/bash
+
+# this scripts assumes that the tradr ws has already been sourced
+
+echo "usage: ./${0##*/} <robot-id> <core-hostname> <localize-against-map> <patrolling-interactive> <enable-omnicam>"
+    
+export ROBOT_ID=$1
+export ROBOT_PREFIX="ugv$ROBOT_ID"
+export ROBOT_ID_1=$(($ROBOT_ID-1))   # zero-based robot id
+
+echo "ROBOT_ID: $ROBOT_ID"
+echo "ROBOT_PREFIX: $ROBOT_PREFIX"
+echo "ROBOT_ID_1: $ROBOT_ID_1"
+
+# ================================
+# take the core hostname as input or set a default value
+export CORE_HOSTNAME=$2
+if [[ -n "$CORE_HOSTNAME" ]] 
+then
+    echo "..."
+else
+    CORE_HOSTNAME="192.168.2.65"    
+fi
+echo "CORE_HOSTNAME: $CORE_HOSTNAME"
+
+# ================================
+export LOCALIZE_AGAINST_MAP=$3
+if [[ -n "$LOCALIZE_AGAINST_MAP" ]] 
+then
+    echo "..."
+else
+    LOCALIZE_AGAINST_MAP="false"    
+fi
+echo "LOCALIZE_AGAINST_MAP: $LOCALIZE_AGAINST_MAP"
+
+# ================================
+export BUILD_PATROLLING_GRAPH_ON_START=$4
+if [[ -n "$BUILD_PATROLLING_GRAPH_ON_START" ]] 
+then
+    echo "..."
+else
+    BUILD_PATROLLING_GRAPH_ON_START="false"    
+fi
+echo "BUILD_PATROLLING_GRAPH_ON_START: $BUILD_PATROLLING_GRAPH_ON_START"
+#export BUILD_PATROLLING_GRAPH_ON_START="false" # look at the following two lines
+# "false" - only available for vrep and switch world names (nodes are given a priori)
+# "true"  - user can assign points of interests by using RVIZ ('start' patrolling implemented but 'stop' still not)
+
+# ================================
+export ENABLE_OMNICAM=$5
+if [[ -n "$ENABLE_OMNICAM" ]] 
+then
+    echo "..."
+else
+    ENABLE_OMNICAM="false"    
+fi
+#export ENABLE_OMNICAM=false  # true/false enable/disable omnicam 
+# ================================
+
+export ENABLE_PATROLLING=0   # 1/0 enable/disable the patrolling; if you want to first map the environment you can disable it
+
+#export PATROLLING_MAP_NAME=DIAG3D # N.B.: this must be the same selected in the script "sim_launcher_nimbro_core" 
+export PATROLLING_MAP_NAME=mission
+
+########################################################################################################
+
+echo "starting nimbro robot"
+echo "ENABLE_OMNICAM: $ENABLE_OMNICAM"
+echo "ENABLE_PATROLLING: $ENABLE_PATROLLING"
+echo "BUILD_PATROLLING_GRAPH_ON_START: $BUILD_PATROLLING_GRAPH_ON_START"
+echo "PATROLLING_MAP_NAME: $PATROLLING_MAP_NAME"
+
+########################################################################################################
+
+#start a named screen session (-S) in detached mode (-dm):
+            
+#NOTE: log files will be created in ~/tradr/logs  (this is set ~/.tradr_init/screenrc )
+
+if [ ! -f ~/.tradr_init/screenrc  ]; then
+    echo "the file ~/.tradr_init/screenrc  is missing"
+    echo "you did not installed orchestra!"
+fi
+
+#start a named screen session (-S) in detached mode (-dm), log  (-L) and read the configuration file (-c)
+screen -dmS UGV_multi -Lc ~/.tradr_init/screenrc 
+#send command to window 
+screen -S UGV_multi -X stuff $"roslaunch nifti_drivers_launchers ugv_multi.launch prefix:=$ROBOT_PREFIX use_omnicam:=$ENABLE_OMNICAM \n"  # note the final \n is actually necessary for the execution!
+sleep 20
+
+screen -dmS new_mapper -Lc ~/.tradr_init/screenrc 
+#screen -S new_mapper -X stuff $"roslaunch laser_mapper main_laser_mapper_tf_remapped.launch prefix:=$ROBOT_PREFIX \n" 
+screen -S new_mapper -X stuff $"roslaunch nifti_mapping_launchers laser_mapper_tf_remapped.launch prefix:=$ROBOT_PREFIX localize_against_loaded_map:=$LOCALIZE_AGAINST_MAP \n" 
+sleep 1
+
+screen -dmS path_planner -Lc ~/.tradr_init/screenrc  
+screen -S path_planner -X stuff $"roslaunch path_planner main_queue_path_planner.launch robot_name:=$ROBOT_PREFIX enable_multi:=true use_trajectory_control:=false \n"  
+sleep 1
+
+screen -dmS trajectory_control -Lc ~/.tradr_init/screenrc  
+screen -S trajectory_control -X stuff $"roslaunch trajectory_control trajectory_control.launch robot_name:=$ROBOT_PREFIX \n"   
+sleep 1
+
+screen -dmS relay -Lc ~/.tradr_init/screenrc 
+screen -S relay -X stuff $"roslaunch tradr_relay_conf $ROBOT_PREFIX.launch core_hostname:=$CORE_HOSTNAME \n"
+sleep 1
+
+#screen -dmS battery_check -Lc ~/.tradr_init/screenrc 
+#screen -S battery_check -X stuff $"roslaunch nifti_drivers_launchers battery_check.launch \n"
+#sleep 1
+
+#send command to window 
+if [ $ENABLE_PATROLLING -eq 1 ]; then 
+    screen -dmS patrol_robot -Lc ~/.tradr_init/screenrc 
+    screen -S patrol_robot -X stuff $"roslaunch tf_remapper stampedtf_listener_and_tf_broadcaster.launch &
+                                   roslaunch patrolling_sim  multi_robot_agent.launch robot_number:=$ROBOT_ID_1 map:=$PATROLLING_MAP_NAME interactive:=$BUILD_PATROLLING_GRAPH_ON_START \n"
+fi
+
+#now check if the command has been runned on the second window
+#screen -R session 
+
+echo DONE
+
+

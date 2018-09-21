@@ -1,0 +1,16 @@
+#!/bin/bash
+# this script is intended to be used with nimbro simulations
+# it copies map files to .ros directory 
+echo "copying maps to .ros" 
+
+source /opt/ros/$ROS_DISTRO/setup.bash         # source ROS 
+source ../../../../devel/setup.bash --extend   # source tradr workspace
+
+FILES='map.bt map.ply map.vtk trajectory.csv'
+
+roscd patrolling_sim/maps/$PATROLLING_MAP_NAME   #PATROLLING_MAP_NAME is inherited from the launching script
+cp $FILES ~/.ros
+
+cd -
+
+echo "done coying"

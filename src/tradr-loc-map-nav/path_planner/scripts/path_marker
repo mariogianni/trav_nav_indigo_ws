@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+
+import rospy
+from math import *
+from nav_msgs.msg import *
+from visualization_msgs.msg import *
+
+def path_cb(path):
+    rospy.loginfo('received a path')
+    m = Marker()
+    m.header = path.header
+    m.pose.orientation.w = 1.0
+    m.ns = "path_marker"
+    m.id = 0
+    m.type = Marker.LINE_STRIP
+    m.scale.x = 0.05
+    m.color.r = 0.0
+    m.color.g = 1.0
+    m.color.b = 0.0
+    m.color.a = 1.0
+    for pose_stamped in path.poses:
+        m.points.append(pose_stamped.pose.position)
+    marker_pub.publish(m)
+
+if __name__=="__main__":
+    rospy.init_node("path_marker")
+    rospy.Subscriber('/planner/tasks/path', Path, path_cb) 
+    marker_pub = rospy.Publisher('/planner/tasks/path_marker', Marker,queue_size=10)
+    rospy.spin()
+

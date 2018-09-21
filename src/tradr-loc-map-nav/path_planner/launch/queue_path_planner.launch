@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>	
+
+<launch>
+
+    <arg name="robot_name" default="ugv1" />		
+    
+    <arg name="respawn_value" default="false" /> <!-- boolean: true, false -->
+    
+	<node name="queue_path_planner" pkg="path_planner" type="queue_path_planner" respawn="$(arg respawn_value)"  output="screen">
+	</node> 
+</launch>

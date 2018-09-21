@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# this scripts assumes that a source to all tradr ws has already been done
+
+
+export FILE_LOG_DYN_MAP=log_dynamic_mapping.txt
+export FILE_LOG_TRAV=log_traversability.txt
+export FILE_LOG_PATH_PLAN=log_path_plan.txt
+export FILE_LOG_TRACKING=log_tracking.txt
+export FILE_LOG_ROADMAP=log_roadmap.txt
+
+
+#start a named screen session (-S) with a named window (-t) adapting to the terminal size (-A) in detached mode (-d -m):
+screen -S pathplan -t dynamic_mapping -A -d -m
+
+#create new window 
+screen -S pathplan -X screen -t traversability
+
+#create new window 
+screen -S pathplan -X screen -t path_planning
+
+#create new window 
+screen -S pathplan -X screen -t tracking 
+
+#create new window 
+screen -S pathplan -X screen -t roadmap 
+
+#send command to window 
+screen -S pathplan -p dynamic_mapping -X stuff $'roslaunch path_planner octomap.launch 2>&1 | tee $FILE_LOG_DYN_MAP\n'  # note the final \n is actually necessary for the execution!
+sleep 5
+
+#send command to window 
+screen -S pathplan -p traversability -X stuff $'roslaunch path_planner traversability_analysis.launch 2>&1 | tee $FILE_LOG_TRAV \n'
+sleep 1
+
+#send command to window 
+screen -S pathplan -p path_planning -X stuff $'roslaunch path_planner path_planner.launch 2>&1 | tee $FILE_LOG_PATH_PLAN \n'
+sleep 1
+
+#send command to window 
+#screen -S pathplan -p tracking -X stuff $'rosrun trajectory_control trajectory_control 2>&1 | tee $FILE_LOG_TRACKING \n'
+screen -S pathplan -p tracking -X stuff $'roslaunch trajectory_control trajectory_control.launch 2>&1 | tee $FILE_LOG_TRACKING \n'
+sleep 1
+
+#send command to window 
+screen -S pathplan -p roadmap -X stuff $'roslaunch roadmap roadmap.launch 2>&1 | tee $FILE_LOG_ROADMAP \n'
+sleep 1
+
+
+#now check if the command has been runned on the first window
+#screen -R session -p dynamic_mapping
+
+#now check if the command has been runned on the second window
+#screen -R session -p traversability
+
+echo DONE

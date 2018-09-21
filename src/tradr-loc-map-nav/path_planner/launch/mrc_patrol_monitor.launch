@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>	
+
+<launch>
+        <arg name="interactive" />
+        
+        <arg name="map"        default="mission"/>
+        <arg name="num_robots" default="2"/>        <!-- here 2 is enough even with 3 robots-->
+                
+    
+        <include file="$(find patrolling_sim)/launch/monitor.launch">
+                <arg name="interactive" value="$(arg interactive)" />
+                <arg name="map"         value="$(arg map)" />
+                <arg name="num_robots"  value="$(arg num_robots)" />
+        </include>
+        
+        <include file="$(find patrolling_build_graph)/launch/build_graph.launch">
+                <arg name="map"        value="$(arg map)" />
+                <arg name="robot_name" value="ugv1" />
+                <arg name="user_build_graph" value="$(arg interactive)" />
+        </include>
+</launch>

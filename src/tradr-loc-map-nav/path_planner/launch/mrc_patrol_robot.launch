@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>	
+
+<launch>
+        <arg name="robot_number" />
+        <arg name="interactive" />
+        
+        <arg name="map" default="mission"/>
+
+        <include file="$(find tf_remapper)/launch/stampedtf_listener_and_tf_broadcaster.launch" />
+        
+        <include file="$(find patrolling_sim)/launch/multi_robot_agent.launch">
+                <arg name="robot_number" value="$(arg robot_number)" />
+                <arg name="map"          value="$(arg map)" />
+                <arg name="interactive"  value="$(arg interactive)" />
+        </include>
+</launch>

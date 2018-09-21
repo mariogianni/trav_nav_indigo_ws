@@ -1,0 +1,130 @@
+#!/bin/bash
+
+# N.B.: 
+# 1) this script is designed just for testing the nimbro network by possibly launching vrep
+# 2) you can kill all the spawned terminals together by right clicking on the X icon on the left bar and selecting "Quit"
+
+echo "usage: ./${0##*/} <robot-id> <core-hostname>"
+    
+ROBOT_ID=$1
+ROBOT_PREFIX="ugv$ROBOT_ID"
+
+ROBOT_ID_1=$(($ROBOT_ID-1)) # robot id zero based
+
+echo "ROBOT_PREFIX: $ROBOT_PREFIX"
+    
+# take the core hostname as input or set a default value
+export CORE_HOSTNAME=$2
+if [[ -n "$CORE_HOSTNAME" ]]; then
+    echo "..."
+else
+    CORE_HOSTNAME=prometeus    
+fi
+echo "CORE_HOSTNAME: $CORE_HOSTNAME"
+
+# arguments to be set 
+#ROBOT_PREFIX='ugv1'         # this robot prefix default
+#OTHER_ROBOT_PREFIX='ugv2'   # other robot prefix default
+
+LAUNCH_VREP=0                # lauch vrep automatically or not
+
+ENABLE_NIMBRO=1              # enable/disable nimbro relay
+
+LOCALIZE_AGAINST_MAP=false       # true/false in order to enable/disable localization against map
+
+ENABLE_PATROLLING=0   # 1/0 enable/disable patrolling; if you want to first map the environment you can disable it
+
+ENABLE_EXPLORATION=0   # 1/0 enable/disable exploration
+
+export PATROLLING_MAP_NAME=nimbro_bumps  # N.B.: this must be the same selected in the script "sim_launcher_nimbro_core" 
+
+BUILD_PATROLLING_GRAPH_ON_START="true" # look at the following two lines
+# "false" - nodes are given a priori
+# "true"  - user can assign points of interests by using RVIZ ('start' patrolling implemented but 'stop' still not)
+
+########################################################################################################
+
+echo "starting nimbro robot"
+echo "ENABLE_NIMBRO: $ENABLE_NIMBRO"
+echo "ENABLE_PATROLLING: $ENABLE_PATROLLING"
+echo "ENABLE_EXPLORATION: $ENABLE_EXPLORATION"
+echo "BUILD_PATROLLING_GRAPH_ON_START: $BUILD_PATROLLING_GRAPH_ON_START"
+echo "PATROLLING_MAP_NAME: $PATROLLING_MAP_NAME"
+
+########################################################################################################
+
+# copy map files to .ros directory in order to allow map loading by using SLAM interactive marker 
+./copy_maps_to_dotros
+
+########################################################################################################
+# VREP
+
+if [ $LAUNCH_VREP -eq 1 ] 
+then
+    #launch vrep with robot simulation 
+    xterm -e "echo vrep robot1; roslaunch vrep_ugv_simulation vrep_ugv_simulation_robot_tf_remap.launch prefix:=$ROBOT_PREFIX; bash" &
+    sleep 5
+fi
+
+########################################################################################################
+# NIMBRO ROBOT RELAY INTERFACE 
+
+if [ $ENABLE_NIMBRO -eq 1 ] 
+then
+    # launch the nimbro robot relay interface
+    xterm -e "echo nimbro robot1 relay interface; roslaunch tradr_relay_conf $ROBOT_PREFIX.launch core_hostname:=$CORE_HOSTNAME; bash" &
+fi
+sleep 3
+
+########################################################################################################
+# LASER MAPPER 
+
+# launch laser mapper 
+#xterm -e "echo laser mapper robot1; roslaunch laser_mapper main_laser_mapper_tf_remapped.launch prefix:=$ROBOT_PREFIX; bash" &
+xterm -e "echo laser mapper robot1; roslaunch nifti_mapping_launchers laser_mapper_tf_remapped.launch prefix:=$ROBOT_PREFIX  localize_against_loaded_map:=$LOCALIZE_AGAINST_MAP  use_pcl_without_bbox:=false; bash" &
+
+
+########################################################################################################
+# PATH PLANNER  
+
+# launch the path planner
+#xterm -e "echo path planner robot1; roslaunch path_planner main_path_planner.launch  enable_multi:=true; bash" &        # single WP path planning
+xterm -e "echo path planner robot1; roslaunch path_planner main_queue_path_planner.launch  robot_name:=$ROBOT_PREFIX  enable_multi:=true; bash" &   # multi WP path planning
+
+########################################################################################################
+# TF MANAGEMENT
+
+# get the robot-poses coming from core and broadcast in /tf
+#xterm -e "echo stampedtf_listener_and_tf_broadcaster; roslaunch tf_remapper stampedtf_listener_and_tf_broadcaster.launch prefix1:=$ROBOT_PREFIX prefix2:=$OTHER_ROBOT_PREFIX; bash" &
+xterm -e "echo stampedtf_listener_and_tf_broadcaster; roslaunch tf_remapper stampedtf_listener_and_tf_broadcaster.launch; bash" &
+
+########################################################################################################
+# PATROLLING 
+
+if [ $ENABLE_PATROLLING -eq 1 ] 
+then 
+
+	xterm -e "echo patrolling ugv$ROBOT_ID; roslaunch patrolling_sim  multi_robot_agent.launch robot_number:=$ROBOT_ID_1 map:=$PATROLLING_MAP_NAME interactive:=$BUILD_PATROLLING_GRAPH_ON_START; bash" &
+
+fi
+
+########################################################################################################
+# EXPLORATION  
+
+if [ $ENABLE_EXPLORATION -eq 1 ] 
+then 
+
+	xterm -e "echo exploration ugv$ROBOT_ID; roslaunch expl_planner mrc_exploration_robot.launch robot_name:=$ROBOT_PREFIX; bash" &
+fi
+
+########################################################################################################
+
+echo DONE
+
+# NOTE: you can use the following command to get the xterm window live if the app terminates or crashes
+# xterm -e "<you_command>; bash" &
+
+                                                   
+
+
+

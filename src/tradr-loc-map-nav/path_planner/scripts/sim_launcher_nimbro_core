@@ -1,0 +1,185 @@
+#!/bin/bash
+
+# N.B.: 
+# 1) this script is designed just for testing the nimbro network on tradr core side
+# 2) you can kill all the spawned terminals together by right clicking on the X icon on the left bar and selecting "Quit"
+
+
+echo "usage: ./${0##*/}  <RUN_SIM>"
+
+
+ROSCORE_PORT=11312    # port of the second roscore that we spawn; this will act as the TRADR CORE and you can run it on the same localhost
+
+export ROBOT_PREFIX1='ugv1'
+export ROBOT_PREFIX2='ugv2'
+export ROBOT_PREFIX3='ugv3'
+
+
+# take the RUN_SIM value or set a default value: are you running a simulation?  "true" or "false" values
+RUN_SIM=$1         
+if [ "$RUN_SIM" = "true" ] 
+then
+    echo "..."
+else
+    RUN_SIM='false'        # other robot prefix default
+fi
+
+
+ENABLE_UGV1=1   # 1/0 enable or not robot1
+ENABLE_UGV2=1   # 1/0 enable or not robot2
+ENABLE_UGV3=0   # 1/0 enable or not robot3
+
+ENABLE_SINGLE_ROBOT_OCU=0  # 1/0 enable or not
+ENABLE_RVIZ_GLOBAL=1       # 1/0 enable or not
+
+ENABLE_PATROLLING=0   # 1/0 enable/disable the patrolling; if you want to first map the environment you can disable it
+
+BUILD_PATROLLING_GRAPH_ON_START="true" # look at the following two lines
+# "false" - nodes are given a priori
+# "true"  - user can assign points of interests by using RVIZ ('start' patrolling implemented but 'stop' still not)
+
+PATROLLING_MAP_NAME=nimbro_bumps  #N.B.: this must be the same selected in the script "sim_launcher_nimbro_robot" or "screen_launcher_ugvmulti_lasermapper_pathplanner"
+#PATROLLING_MAP_NAME=DIAG3D  #N.B.: this must be the same selected in the script "sim_launcher_nimbro_robot" or "screen_launcher_ugvmulti_lasermapper_pathplanner"
+#PATROLLING_MAP_NAME=DIAG3D_court
+#PATROLLING_MAP_NAME=mission
+
+########################################################################################################
+
+export ROS_MASTER_URI=http://localhost:$ROSCORE_PORT
+
+export NUM_ROBOTS=$(($ENABLE_UGV1+$ENABLE_UGV2+$ENABLE_UGV3)) 
+NUM_ROBOTS=$(($NUM_ROBOTS>0?$NUM_ROBOTS:1))  # at least one robot should be considered by the monitor
+    
+echo "starting nimbro core"
+echo "ROBOT_PREFIX1: $ROBOT_PREFIX1"
+echo "ROBOT_PREFIX2: $ROBOT_PREFIX2"
+echo "ROBOT_PREFIX3: $ROBOT_PREFIX3"
+echo "RUN_SIM: $RUN_SIM"
+echo "ENABLE_PATROLLING: $ENABLE_PATROLLING"
+echo "BUILD_PATROLLING_GRAPH_ON_START: $BUILD_PATROLLING_GRAPH_ON_START"
+echo "PATROLLING_MAP_NAME: $PATROLLING_MAP_NAME"
+
+echo "ugv  enable:"
+echo "ENABLE_UGV1: $ENABLE_UGV1"
+echo "ENABLE_UGV2: $ENABLE_UGV2"
+echo "ENABLE_UGV3: $ENABLE_UGV3"
+echo "NUM_ROBOTS: $NUM_ROBOTS"
+
+    
+########################################################################################################
+# ROSCORE 
+
+# launch a new roscore
+xterm -e "echo new roscore; roscore -p $ROSCORE_PORT; bash" &
+
+sleep 3
+
+########################################################################################################
+# NIMBRO CORE RELAY INTERFACES
+
+if [ $ENABLE_UGV1 -eq 1 ] 
+then
+    # launch the nimbro core relay interface towards robot 1
+    xterm -e "echo nimbro core relay robot1; roslaunch tradr_relay_conf core_$ROBOT_PREFIX1.launch; bash" &
+fi
+
+if [ $ENABLE_UGV2 -eq 1 ] 
+then
+    # launch the nimbro core relay interface towards robot 2
+    xterm -e "echo nimbro core relay robot2; roslaunch tradr_relay_conf core_$ROBOT_PREFIX2.launch; bash" &
+fi
+
+if [ $ENABLE_UGV3 -eq 1 ] 
+then
+    # launch the nimbro core relay interface towards robot 3
+    xterm -e "echo nimbro core relay robot3; roslaunch tradr_relay_conf core_$ROBOT_PREFIX3.launch; bash" &
+fi
+
+
+########################################################################################################
+# TF MANAGEMENT
+
+if [ $ENABLE_UGV1 -eq 1 ] 
+then
+    xterm -e "echo tf_remapper 1; roslaunch tf_remapper tf_remap_robot_prefix.launch prefix:=$ROBOT_PREFIX1; bash" &
+fi
+
+if [ $ENABLE_UGV2 -eq 1 ] 
+then
+    xterm -e "echo tf_remapper 2; roslaunch tf_remapper tf_remap_robot_prefix.launch prefix:=$ROBOT_PREFIX2; bash" &
+fi
+
+if [ $ENABLE_UGV3 -eq 1 ] 
+then
+    xterm -e "echo tf_remapper 3; roslaunch tf_remapper tf_remap_robot_prefix.launch prefix:=$ROBOT_PREFIX3; bash" &
+fi
+
+# republish robot-poses towards each robot
+xterm -e "echo tf_robots_republisher; roslaunch tf_remapper tf_robots_republisher.launch prefix1:=$ROBOT_PREFIX1 prefix2:=$ROBOT_PREFIX2; prefix3:=$ROBOT_PREFIX3; bash" &
+
+########################################################################################################
+# SINGLE-ROBOT OCU PP
+
+if [ $ENABLE_SINGLE_ROBOT_OCU -eq 1 ] 
+then
+
+    if [ $ENABLE_UGV1 -eq 1 ] 
+    then
+        # launch the ocu_pp for robot 1
+        xterm -e "echo ocu_pp robot1; roslaunch tradr_ocu_launch ocu_pp.launch robot:=$ROBOT_PREFIX1 use_old_robot:=$RUN_SIM; bash" &
+    fi
+
+    if [ $ENABLE_UGV2 -eq 1 ] 
+    then
+        # launch the ocu_pp for robot 2
+        xterm -e "echo ocu_pp robot2; roslaunch tradr_ocu_launch ocu_pp.launch robot:=$ROBOT_PREFIX2 use_old_robot:=$RUN_SIM; bash" &
+    fi
+
+    if [ $ENABLE_UGV3 -eq 1 ] 
+    then
+        # launch the ocu_pp for robot 2
+        xterm -e "echo ocu_pp robot3; roslaunch tradr_ocu_launch ocu_pp.launch robot:=$ROBOT_PREFIX3 use_old_robot:=$RUN_SIM; bash" &
+    fi
+    
+fi
+
+########################################################################################################
+# GLOBAL RVIZ
+
+if [ $ENABLE_RVIZ_GLOBAL -eq 1 ] 
+then
+    xterm -e "echo global rviz; roslaunch path_planner rviz_multi_robots.launch robot1:=$ROBOT_PREFIX1 robot2:=$ROBOT_PREFIX2 robot3:=$ROBOT_PREFIX3 use_old_robot:=$RUN_SIM; bash" &
+fi
+
+sleep 5
+
+########################################################################################################
+# PATROLLING 
+
+if [ $ENABLE_PATROLLING -eq 1 ] 
+then 
+
+    # --------------------------------------------------------------------------------------------------
+    # PATROLLING GRAPH BUILDING VIA RVIZ
+    if [ "$BUILD_PATROLLING_GRAPH_ON_START" = "true" ] 
+    then
+        # Interface for Graph Building via RVIZ
+        xterm -e "echo build_graph build_graph; roslaunch patrolling_build_graph  build_graph.launch robot_name:=$ROBOT_PREFIX1 map:=$PATROLLING_MAP_NAME; bash" &
+    fi
+    
+	xterm -e "echo patrolling monitor; roslaunch patrolling_sim  monitor.launch map:=$PATROLLING_MAP_NAME interactive:=$BUILD_PATROLLING_GRAPH_ON_START num_robots:=$NUM_ROBOTS; bash" &
+
+fi
+
+########################################################################################################
+
+
+echo DONE
+
+# NOTE: you can use the following command to get the xterm window live if the app terminates or crashes
+# xterm -e "<you_command>; bash" &
+
+                                                   
+
+
+

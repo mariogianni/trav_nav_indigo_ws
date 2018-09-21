@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+source /opt/ros/$ROS_DISTRO/setup.bash         # source ROS 
+source ../../../../devel/setup.bash --extend   # source tradr workspace
+
+echo "saving map"
+
+rosservice call /volumetric_mapping/save_map "file_path: 'map.bt'"
+rosservice call /volumetric_mapping/save_point_cloud "file_path: 'map.ply'"
+rosservice call /laser_mapper/save_trajectory "file_path: 'trajectory.csv'"
+
+rosrun laser_mapper_tools octomap_to_point_cloud ~/.ros/map.bt ~/.ros/map.vtk
+
+echo DONE
+
+

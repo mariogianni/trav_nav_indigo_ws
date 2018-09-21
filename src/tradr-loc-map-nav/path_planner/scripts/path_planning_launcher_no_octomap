@@ -1,0 +1,59 @@
+#!/bin/bash
+
+QUEUE_PATH_PLANNER=1 # 1 queue path planner, 0 path planner
+
+if [ $QUEUE_PATH_PLANNER -eq 1 ] 
+then
+    echo "using queue path planner"
+fi
+
+########################################################################################################
+# Dynamic mapping + Normals estimation
+#xterm -e "echo ugv mapping; roslaunch path_planner octomap_with_mux.launch; bash" & # (UGVs have a different map from the UAV)
+xterm -e "echo ugv mapping; roslaunch path_planner compute_normals.launch; bash" & # (UGVs have a different map from the UAV)
+sleep 5
+
+########################################################################################################
+# Traversability analysis
+xterm -e "echo ugv traversability; roslaunch path_planner traversability_analysis.launch; bash" &
+sleep 1
+
+#######################################################################################################
+# Path planning algorithm
+if [ $QUEUE_PATH_PLANNER -eq 1 ] 
+then
+	# global path planner (queue path planner) + local path planner (path planner manager)
+	xterm -e "echo ugv queue path planner; roslaunch path_planner queue_path_planner.launch; bash" &
+	#sleep 2 
+	xterm -e "echo ugv path planner manager; roslaunch path_planner path_planner_manager.launch use_marker_controller:=false; bash" &
+else
+	#xterm -e "echo ugv path planner; roslaunch path_planner path_planner.launch; bash" &
+	xterm -e "echo ugv path planner manager; roslaunch path_planner path_planner_manager.launch; bash" &
+fi 
+sleep 3
+
+########################################################################################################
+# Trajectory tracking controller action server
+#xterm -e "echo ugv mapping; rosrun trajectory_control trajectory_control; bash" &
+xterm -e "echo ugv trajectory control; roslaunch trajectory_control trajectory_control.launch; bash" &
+sleep 1
+
+########################################################################################################
+# Roadmap computation node
+#xterm -e "echo roadmap node; roslaunch roadmap roadmap.launch; bash" &
+#sleep 1
+
+########################################################################################################
+#- RVIZ
+xterm -e "echo rviz; roslaunch path_planner rviz_path_planning.launch; bash" &
+
+########################################################################################################
+#- PATH MARKER
+xterm -e "echo path_marker; rosrun path_planner path_marker; bash" &
+echo DONE
+
+
+                                                   
+
+
+

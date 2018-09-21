@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>	
+
+<launch>
+
+    <arg name="robot_name" default="ugv1" />		
+    
+    <arg name="respawn_value" default="false" /> <!-- boolean: true, false -->
+    
+    <arg name="use_marker_controller" default="true" /> <!-- boolean: true, false -->
+    
+    <arg name="enable_laser_proximity_callback" default="false"/>  <!-- enable a more conservative use of laser proximity info -->
+    
+    <arg name="use_rss" default="false" />
+    
+	<node name="path_planner_manager" pkg="path_planner" type="path_planner_manager" respawn="$(arg respawn_value)"  output="screen">
+		<param name = "use_marker_controller" value = "$(arg use_marker_controller)"/>
+        
+        <param name = "enable_laser_proximity_callback" value = "$(arg enable_laser_proximity_callback)"/>
+        
+        <param name = "use_rss" value = "$(arg use_rss)"/>
+	</node> 
+    
+</launch>

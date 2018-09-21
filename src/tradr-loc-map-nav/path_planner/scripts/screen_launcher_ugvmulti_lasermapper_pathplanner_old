@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# this scripts assumes that the tradr ws has already been sourced
+
+echo "usage: ./${0##*/} <robot-id> <core-hostname>"
+    
+export ROBOT_ID=$1
+export ROBOT_PREFIX="ugv$ROBOT_ID"
+export ROBOT_ID_1=$(($ROBOT_ID-1))   # zero-based robot id
+
+echo "ROBOT_ID: $ROBOT_ID"
+echo "ROBOT_PREFIX: $ROBOT_PREFIX"
+echo "ROBOT_ID_1: $ROBOT_ID_1"
+
+# take the core hostname as input or set a default value
+export CORE_HOSTNAME=$2
+if [[ -n "$CORE_HOSTNAME" ]] 
+then
+    echo "..."
+else
+    CORE_HOSTNAME="192.168.2.54"    
+fi
+echo "CORE_HOSTNAME: $CORE_HOSTNAME"
+
+export ENABLE_OMNICAM=false  # true/false enable/disable omnicam 
+
+export ENABLE_PATROLLING=1   # 1/0 enable/disable the patrolling; if you want to first map the environment you can disable it
+
+#export PATROLLING_MAP_NAME=DIAG3D # N.B.: this must be the same selected in the script "sim_launcher_nimbro_core" 
+export PATROLLING_MAP_NAME=DIAG3D_court
+
+export BUILD_PATROLLING_GRAPH_ON_START="false" # look at the following two lines
+# "false" - only available for vrep and switch world names (nodes are given a priori)
+# "true"  - user can assign points of interests by using RVIZ ('start' patrolling implemented but 'stop' still not)
+
+NOW=$(date +"%Y-%m-%d-%H-%M-%S")
+export FILE_LOG_LASER_MAPPER="log_laser_mapper_$NOW.txt"
+export FILE_LOG_PATROLLING="log_patrolling_$NOW.txt"
+
+########################################################################################################
+
+echo "starting nimbro robot"
+echo "ENABLE_OMNICAM: $ENABLE_OMNICAM"
+echo "ENABLE_PATROLLING: $ENABLE_PATROLLING"
+echo "BUILD_PATROLLING_GRAPH_ON_START: $BUILD_PATROLLING_GRAPH_ON_START"
+echo "PATROLLING_MAP_NAME: $PATROLLING_MAP_NAME"
+
+########################################################################################################
+
+#start a named screen session (-S) with a named window (-t) adapting to the terminal size (-A) in detached mode (-d -m):
+screen -S multi -t ugv_multi -A -d -m
+
+#create new window 
+screen -S multi -X screen -t laser_mapper
+
+#create new window 
+screen -S multi -X screen -t path_planning
+
+#create new window 
+screen -S multi -X screen -t nimbro
+
+#create new window 
+screen -S multi -X screen -t tf
+
+#create new window 
+screen -S multi -X screen -t patrolling
+
+
+#send command to window 
+screen -S multi -p ugv_multi -X stuff $'roslaunch nifti_drivers_launchers ugv_multi.launch prefix:=$ROBOT_PREFIX use_omnicam:=$ENABLE_OMNICAM\n'  # note the final \n is actually necessary for the execution!
+sleep 20
+
+#send command to window 
+#screen -S multi -p laser_mapper -X stuff $'roslaunch laser_mapper main_laser_mapper_tf_remapped.launch prefix:=$ROBOT_PREFIX\n'
+screen -S multi -p laser_mapper -X stuff $'roslaunch laser_mapper main_laser_mapper_tf_remapped.launch prefix:=$ROBOT_PREFIX 2>&1 | tee $FILE_LOG_LASER_MAPPER \n'
+sleep 1
+
+#send command to window 
+screen -S multi -p path_planning -X stuff $'roslaunch path_planner main_queue_path_planner.launch robot_name:=$ROBOT_PREFIX enable_multi:=true\n'
+sleep 1
+
+#send command to window 
+screen -S multi -p nimbro -X stuff $'roslaunch tradr_relay_conf $ROBOT_PREFIX.launch core_hostname:=$CORE_HOSTNAME \n'
+sleep 1
+
+#send command to window 
+#screen -S multi -p tf -X stuff $'roslaunch tf_remapper stampedtf_listener_and_tf_broadcaster.launch prefix1:=$ROBOT_PREFIX prefix2:=$OTHER_ROBOT_PREFIX \n'
+screen -S multi -p tf -X stuff $'roslaunch tf_remapper stampedtf_listener_and_tf_broadcaster.launch \n'
+sleep 1
+
+#send command to window 
+if [ $ENABLE_PATROLLING -eq 1 ] 
+then 
+    screen -S multi -p patrolling -X stuff $'roslaunch patrolling_sim  multi_robot_agent.launch robot_number:=$ROBOT_ID_1 map:=$PATROLLING_MAP_NAME interactive:=$BUILD_PATROLLING_GRAPH_ON_START 2>&1 | tee $FILE_LOG_PATROLLING  \n'
+fi
+
+#now check if the command has been runned on the first window
+#screen -R session -p dynamic_mapping
+
+#now check if the command has been runned on the second window
+#screen -R session -p traversability
+
+echo DONE

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+
+# everything
+xterm -e "echo laser assembler; roslaunch laser_mapper nifti_sick_outdoor_laser_mapper_volumetric.launch; bash" &
+
+
+echo DONE
+
+
