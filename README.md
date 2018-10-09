@@ -107,7 +107,7 @@ pkg="ms_octomap_server"
 </code></pre>
 * Remap the point cloud_in1, cloud_in2 and cloud_in3 topics with the topics where the point clouds coming from differents sensors are published. For example 
 <pre><code class="c">
-"<remap from = "cloud_in1" to = "/point_cloud_from_laser1"/>"
-"<remap from = "cloud_in2" to = "/point_cloud_from_laser2"/>"
-"<remap from = "cloud_in3" to = "/point_cloud_from_rgbd_camera"/>"
+&lt;remap from = "cloud_in1" to = "/point_cloud_from_laser1"/;&gt
+&lt;remap from = "cloud_in2" to = "/point_cloud_from_laser2"/;&gt
+&lt;remap from = "cloud_in3" to = "/point_cloud_from_rgbd_camera"/;&gt
 </code></pre>
