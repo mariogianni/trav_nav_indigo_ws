@@ -93,3 +93,15 @@ $ rosrun rqt_reconfigure rqt_reconfigure
 
 A concise description of these parameters can be found in _~/trav_nav_indigo_ws/src/tradr-loc-map-nav/path_planner/README.md_ file
 
+### Octomap with three input channels
+
+If you want to use the version of Octomap modified to merge point cloud coming from different channels (sensors) in a single octree then you have to modify the 
+launch file where your octomap node is called as follows
+* Change the name of the package from 
+<pre><code class="c">
+$ pkg="octomap_server"
+</code></pre>
+to
+<pre><code class="c">
+$ pkg="ms_octomap_server"
+</code></pre>
